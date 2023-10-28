@@ -1,0 +1,10 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "defaultTitle": "哈勃Hub",
+    "titlePenetrate": true,
+    "backgroundImageColor": "#3264C5"
+  }
+}
