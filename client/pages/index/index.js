@@ -344,20 +344,22 @@ Page({
                 title: '服务器上所有SSH用户 —— 点击复制',
                 cancelButtonText: '关闭',
                 success: (res) => {
-                  //console.log(res)
+                  console.log(res)
                   let index = res.index
-                  dd.setClipboard({
-                    text: 'SSH登录用户名:'+authUsers[index]['username']+'\r\nSSH登录密码:'+authUsers[index]['userpwd'],
-                    success: () => {
-                      dd.showToast({
-                        content: '复制成功',
-                        type: 'success',
-                        duration: 1000
-                      });
-                    },
-                    fail: () => {},
-                    complete: () => {},
-                  });
+                  if(index != -1){
+                    dd.setClipboard({
+                      text: 'SSH登录用户名:'+authUsers[index]['username']+'\r\nSSH登录密码:'+authUsers[index]['userpwd'],
+                      success: () => {
+                        dd.showToast({
+                          content: '复制成功',
+                          type: 'success',
+                          duration: 1000
+                        });
+                      },
+                      fail: () => {},
+                      complete: () => {},
+                    });
+                  }
                 },
                 fail: () => {},
                 complete: () => {},

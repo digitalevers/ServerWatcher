@@ -42,7 +42,7 @@ if($opt == 'listServer'){
     //添加服务器资源
     $server_ip = isset($_POST['server_ip']) ? addslashes(trim($_POST['server_ip'])) : '';
     $server_desc = isset($_POST['server_desc']) ? addslashes(trim($_POST['server_desc'])) : '';
-    $server_port = isset($_POST['server_port']) ? addslashes(trim($_POST['server_port'])) : '';
+    $server_port = isset($_POST['server_port']) ? addslashes(trim($_POST['server_port'])) : 22;
     $server_pwd = isset($_POST['server_pwd']) ? addslashes(trim($_POST['server_pwd'])) : '';
     $server_type = isset($_POST['server_type']) ? addslashes(trim($_POST['server_type'])) : 1;
 
@@ -55,6 +55,11 @@ if($opt == 'listServer'){
         if($server['ip'] == $server_ip){
             ejson(198,[],'不能重复添加服务器');
         }
+    }
+    //执行登录操作
+    $ssh = _sshConnectByPwd(['ip'=>$server_ip,'port'=>$server_port,'pwd'=>$server_pwd]);
+    if($ssh == false){
+        ejson(197,[],'连接失败，无法添加');
     }
     $add = array(
             array(
@@ -71,7 +76,7 @@ if($opt == 'listServer'){
     if($res){
         ejson(200,[],'添加成功');
     } else {
-        ejson(197,[],'添加失败');
+        ejson(197,[],'写入失败');
     }
 } else if($opt == 'getAuthorizationUsers'){
     //获取授权员工列表
