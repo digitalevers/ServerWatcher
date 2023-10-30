@@ -202,9 +202,12 @@ Page({
               dd.showToast({
                 'type':type,
                 'content':res.data.msg,
-                'duration':2000
+                'duration':1000,
+                success: () => {
+                  that.closeAddServerModal()
+                  that.onLoad()
+                },
               })
-              that.closeAddServerModal()
             },
             fail: function(res) {
               //console.log(res)
@@ -252,7 +255,7 @@ Page({
       for(let key in postData){
         if(postData[key] == null || postData[key].trim() == ""){
           checkPostData['code'] = 199
-          checkPostData['msg'] = '参数不能为空'
+          checkPostData['msg'] = '参数不能为空，请点击授权'
           return checkPostData
         }
         if(postData['authorization-pwd'] !== postData['authorization-repwd']){
@@ -526,7 +529,7 @@ Page({
               //   },
               // });
             } else {
-              dd.alert({'content':res.data.msg})
+              dd.alert({'content':res.data.msg,'buttonText':'好的'})
             }
           },
           fail: function(res) {

@@ -91,7 +91,7 @@
         <view class="form-row">
           <view class="form-row-label">Root密码</view>
           <view class="form-row-content">
-            <input type="text" class="form-control" id="server-pwd" name="server-pwd" placeholder="例:123456" />
+            <input type="text" password="true" class="form-control" id="server-pwd" name="server-pwd" placeholder="例:123456" />
           </view>
         </view>
 
