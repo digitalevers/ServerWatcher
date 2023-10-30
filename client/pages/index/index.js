@@ -208,6 +208,11 @@ Page({
             },
             fail: function(res) {
               //console.log(res)
+              dd.showToast({
+                'type':'fail',
+                'content':res.errorMessage+',可能密码有误',
+                'duration':1000
+              })
             },
             complete: function(res) {
               //console.log(res)

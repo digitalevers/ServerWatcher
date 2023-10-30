@@ -59,7 +59,7 @@ if($opt == 'listServer'){
     //执行登录操作
     $ssh = _sshConnectByPwd(['ip'=>$server_ip,'port'=>$server_port,'pwd'=>$server_pwd]);
     if($ssh == false){
-        ejson(197,[],'连接失败，无法添加');
+        ejson(197,[],'连接失败，无法添加，可能密码有误');
     }
     $add = array(
             array(
@@ -110,7 +110,7 @@ if($opt == 'listServer'){
         ejson(196,[],'服务器信息缺失');
     } else {
         //是否重复添加
-        if(is_array($servers[$index]['authUsers']) && count($servers[$index]['authUsers']) > 0){
+        if(isset($servers[$index]['authUsers']) && is_array($servers[$index]['authUsers']) && count($servers[$index]['authUsers']) > 0){
             foreach ($servers[$index]['authUsers'] as $_authUser){
                 if($_authUser['username'] == $authUserName){
                     ejson(191,[],'请勿重复添加');
@@ -122,7 +122,7 @@ if($opt == 'listServer'){
     if($ssh){
         $addAuthUserResult = $ssh->exec("useradd ".$authUserName.";echo ".$authPwd."|passwd --stdin ".$authUserName);
         if($addAuthUserResult){
-            $oldAuthUsers = $servers[$index]['authUsers'] ? $servers[$index]['authUsers'] : array();
+            $oldAuthUsers = isset($servers[$index]['authUsers']) ? $servers[$index]['authUsers'] : array();
             $newAuthUser = array(
                 array('truename'=>$authTrueName,'username'=>$authUserName,'userpwd'=>$authPwd)
             );
