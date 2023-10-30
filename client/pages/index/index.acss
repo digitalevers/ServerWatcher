@@ -92,8 +92,8 @@
 
 .btn-primary{
   color:#fff;
-  background-color: #3c8dbc;
-  border-color: #367fa9;
+  background-color: #0089FF;
+  border-color: #0089FF;  /*#367fa9*/
 }
 
 /** 添加服务器 **/

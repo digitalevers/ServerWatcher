@@ -168,9 +168,20 @@ Page({
 
   //执行添加服务器操作
   doAddServer(e){
+    let that = this
     let api = this.data.domain   //页面不销毁 则可以从data中取
-    //console.log(domain)
     let postData = e.detail.value
+    //校验表单
+    let checkFormResult = this.checkForm(postData,1)
+    //console.log(checkFormResult)
+    if(checkFormResult['code'] != 200){
+      dd.showToast({
+        content: checkFormResult['msg'],
+        type: 'fail',
+        duration: 1500
+      });
+      return
+    }
     dd.getAuthCode({
         success:function(res){
           let code = res.authCode
@@ -178,11 +189,11 @@ Page({
             url: api+'/dingtalk.php?opt=addServer&code='+code,
             method: 'POST',
             data: {
-              'server_ip':postData['server-ip'],
-              'server_desc':postData['server-desc'],
-              'server_port':postData['server-port'],
-              'server_pwd':postData['server-pwd'],
-              'server_type':postData['server-type'],
+              'server_ip':checkFormResult['data']['server-ip'],
+              'server_desc':checkFormResult['data']['server-desc'],
+              'server_port':checkFormResult['data']['server-port'],
+              'server_pwd':checkFormResult['data']['server-pwd'],
+              //'server_type':postData['server-type'],
             },
             dataType: 'json',
             timeout:2000,
@@ -193,6 +204,7 @@ Page({
                 'content':res.data.msg,
                 'duration':2000
               })
+              that.closeAddServerModal()
             },
             fail: function(res) {
               //console.log(res)
@@ -206,6 +218,47 @@ Page({
 
         }
     });
+  },
+
+  /**
+   * 表单数据校验
+   * @param {*} postData 
+   * @param {*} type 1 添加服务器表单 2 添加SSH用户表单
+   */
+  checkForm(postData,type){
+    let checkPostData = {'code':200,'msg':'ok','data':null}
+    if(type == 1){
+      if(postData['server-ip'] == null || postData['server-ip'].trim() == ""){
+        checkPostData['code'] = 199
+        checkPostData['msg'] = 'IP 不能为空'
+        return checkPostData
+      }
+      if(postData['server-pwd'] == null || postData['server-pwd'].trim() == ""){
+        checkPostData['code'] = 198
+        checkPostData['msg'] = 'Root 密码不能为空'
+        return checkPostData
+      }
+      if(postData['server-port'] == null || postData['server-port'].trim() == ""){
+        postData['server-port'] = 22
+        checkPostData['data'] = postData
+      }
+
+    } else if(type == 2){
+      for(let key in postData){
+        if(postData[key] == null || postData[key].trim() == ""){
+          checkPostData['code'] = 199
+          checkPostData['msg'] = '参数不能为空'
+          return checkPostData
+        }
+        if(postData['authorization-pwd'] !== postData['authorization-repwd']){
+          checkPostData['code'] = 198
+          checkPostData['msg'] = '密码不一致'
+          return checkPostData
+        }
+        checkPostData['data'] = postData
+      }
+    }
+    return checkPostData
   },
 
   //执行添加域名操作
@@ -394,6 +447,17 @@ Page({
     let postData = e.detail.value
     //this.setData({'curOptServerIndex':index})
     //console.log(index)
+    //校验表单
+    let checkFormResult = this.checkForm(postData,2)
+    //console.log(checkFormResult)
+    if(checkFormResult['code'] != 200){
+      dd.showToast({
+        content: checkFormResult['msg'],
+        type: 'fail',
+        duration: 1500
+      });
+      return
+    }
     dd.getAuthCode({
       success:function(res){
         let code = res.authCode
@@ -402,10 +466,10 @@ Page({
           method: 'POST',
           data:{
             'index':index,
-            'authTrueName':postData['authorization-truename'],
-            'authUserName':postData['authorization-username'],
-            'authPwd':postData['authorization-pwd'],
-            'authRepwd':postData['authorization-repwd']
+            'authTrueName':checkFormResult['data']['authorization-truename'],
+            'authUserName':checkFormResult['data']['authorization-username'],
+            'authPwd':checkFormResult['data']['authorization-pwd'],
+            'authRepwd':checkFormResult['data']['authorization-repwd']
           },
           dataType: 'json',
           timeout:2000,

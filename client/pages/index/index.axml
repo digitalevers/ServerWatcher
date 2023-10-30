@@ -76,20 +76,20 @@
           </view>
         </view>
 
-        <view class="form-row">
+        <!-- <view class="form-row">
           <view class="form-row-label">服务器类型</view>
-            <!-- <picker class="form-control" id="server-type"  onChange="bindPickerChange" value="{{index}}" range="{{array}}">
+            <picker class="form-control" id="server-type"  onChange="bindPickerChange" value="{{index}}" range="{{array}}">
                 <view class="picker">{{array[index]}}</view>
-            </picker> -->
+            </picker>
             <radio-group name="radio-group">
               <label><radio value="1" />中控服务器</label>
               <label><radio value="2" />应用服务器</label>
             </radio-group>
             <input type="text" name="server-type" value="{{index+1}}" style="display:none;" />
-        </view>
+        </view> -->
 
         <view class="form-row">
-          <view class="form-row-label">root密码</view>
+          <view class="form-row-label">Root密码</view>
           <view class="form-row-content">
             <input type="text" class="form-control" id="server-pwd" name="server-pwd" placeholder="例:123456" />
           </view>

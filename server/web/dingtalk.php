@@ -44,7 +44,7 @@ if($opt == 'listServer'){
     $server_desc = isset($_POST['server_desc']) ? addslashes(trim($_POST['server_desc'])) : '';
     $server_port = isset($_POST['server_port']) ? addslashes(trim($_POST['server_port'])) : '';
     $server_pwd = isset($_POST['server_pwd']) ? addslashes(trim($_POST['server_pwd'])) : '';
-    $server_type = isset($_POST['server_type']) ? addslashes(trim($_POST['server_type'])) : '';
+    $server_type = isset($_POST['server_type']) ? addslashes(trim($_POST['server_type'])) : 1;
 
     //TODO 更详细的过滤规则
     if(empty($server_ip) || empty($server_port) || empty($server_pwd) || empty($server_type)){
