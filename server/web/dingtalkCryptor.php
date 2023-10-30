@@ -138,9 +138,11 @@ class Prpcrypt
             print $e;
             return array(ErrorCode::$DecryptAESError, null);
         }
-        if ($from_corpid != $corpid)
+        if ($from_corpid != $corpid){
             return array(ErrorCode::$ValidateSuiteKeyError, null);
-            return array(0, $xml_content);
+        }
+            
+        return array(0, $xml_content);
             
     }
     

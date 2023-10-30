@@ -14,15 +14,15 @@ if(empty($opt) || (empty($code) && $opt != 'callback')){
 if($opt != 'callback'){
     $authUrl = 'https://oapi.dingtalk.com/user/getuserinfo?access_token='.$config['token'].'&code='.$code;
     $authRs = json_decode(requestGet($authUrl),true);
-
+    //var_dump($authRs);
     if($authRs['errcode'] == 0){
-        //请求成功
-        //测试无需继续往下执行 证明域名正常部署并注册钉钉回调事件即可
-        if($opt == 'test'){
-            $callbackResult = _registerDingtalkCallback($config['token']);
+        //无需继续往下执行 证明域名正常部署并注册钉钉回调事件即可
+        if($opt == 'register'){
+            $callbackResult = _registerDingtalkCallback($config);
+            //file_put_contents('../res.txt', $callbackResult);
             ejson(200,json_decode($callbackResult,true));
         }
-        //不是管理员
+        //不是管理员 则无权访问接口
         if($authRs['is_sys'] != 1){
             ejson(199);
         }
@@ -103,6 +103,15 @@ if($opt == 'listServer'){
     $servers = json_decode(file_get_contents('../servers.json'),true);
     if(!isset($servers[$index])){
         ejson(196,[],'服务器信息缺失');
+    } else {
+        //是否重复添加
+        if(is_array($servers[$index]['authUsers']) && count($servers[$index]['authUsers']) > 0){
+            foreach ($servers[$index]['authUsers'] as $_authUser){
+                if($_authUser['username'] == $authUserName){
+                    ejson(191,[],'请勿重复添加');
+                }
+            }
+        }
     }
     $ssh = _sshConnectByPwd($servers[$index]);
     if($ssh){
@@ -110,7 +119,7 @@ if($opt == 'listServer'){
         if($addAuthUserResult){
             $oldAuthUsers = $servers[$index]['authUsers'] ? $servers[$index]['authUsers'] : array();
             $newAuthUser = array(
-                array('truename'=>$authTrueName,'username'=>$authUserName)
+                array('truename'=>$authTrueName,'username'=>$authUserName,'userpwd'=>$authPwd)
             );
 
             $authUsers = array_merge($oldAuthUsers,$newAuthUser);
@@ -129,18 +138,24 @@ if($opt == 'listServer'){
         ejson(196,[],'添加授权员工连接失败');
     }
 } else if($opt == 'callback'){
+    
     //钉钉回调事件
     include_once 'dingtalkCryptor.php';
-    $dingTalkCryptor = new DingtalkCrypt('123456', '', '');
+    $dingTalkCryptor = new DingtalkCrypt($config['register_token'], $config['register_aes_key'], $config['corpid']);
 
     $signature = trim($_GET['signature']);
     $timestamp = trim($_GET['timestamp']);
     $nonce = trim($_GET['nonce']);
     $encryptRaw = json_decode(stripslashes(file_get_contents('php://input')),true);
+    //file_put_contents('../get.txt',json_encode($_GET));
+    //file_put_contents('../encryptRaw.txt',json_encode($encryptRaw));
     $encrypt = $encryptRaw['encrypt'];
     //echo $encrypt;
     $plainText = '';
-    $dingTalkCryptor->DecryptMsg($signature, $timestamp, $nonce, $encrypt,$plainText);
+    $res = $dingTalkCryptor->DecryptMsg($signature, $timestamp, $nonce, $encrypt, $plainText);
+    //file_put_contents('../decryptMsg.txt',$signature.'|'.$timestamp.'|'.$nonce.'|'.$encrypt.'|'.$res);
+    $plainText = trim($plainText);
+
     if($plainText == '{"EventType":"check_url"}'){
         //返回加密success串
         $plainText = 'success';
@@ -155,6 +170,55 @@ if($opt == 'listServer'){
         //$dingTalkCryptor->DecryptMsg($encryptObj['msg_signature'], $timestamp, $nonce, $encryptObj['encrypt'],$xx);
         //echo $xx;
         exit();
+    } else {
+        //根据钉钉回调消息处理离职员工的ssh帐号
+        $dingTalkCallBackMsgArr = json_decode($plainText,true);
+        if($dingTalkCallBackMsgArr['EventType'] == "user_leave_org"){
+            //ssh删除用户 UserId
+            if(count($dingTalkCallBackMsgArr['UserId']) > 0){
+                $servers = json_decode(file_get_contents('../servers.json'),true);
+                foreach ($dingTalkCallBackMsgArr['UserId'] as $_userId){
+                    if(count($servers) > 0){
+                        foreach ($servers as $_server_index=>$_server){
+                            if(count($_server['authUsers']) > 0){
+                                foreach ($_server['authUsers'] as $_user_index=>$_user){
+                                    if($_user['username'] == 'dd-'.trim($_userId)){
+                                        //执行删除SSH用户操作
+                                        $ssh = _sshConnectByPwd($_server);
+                                        if($ssh){
+                                            $delAuthUserResult = $ssh->exec("userdel -rf ".$_user['username']);    //-Z requires SELinux enabled kernel
+                                            //var_dump($delAuthUserResult);
+                                            if($delAuthUserResult == ""){
+                                                unset($servers[$_server_index]['authUsers'][$_user_index]);
+                                            } else {
+                                               //TODO 删除失败写入日志
+                                                echo '删除失败-'.$delAuthUserResult;
+                                            }
+                                        } else {
+                                            //TODO 连接失败写入日志
+                                            echo '连接失败';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                $writeRes = file_put_contents('../servers.json',json_encode($servers,JSON_UNESCAPED_UNICODE));
+                if($writeRes){
+                    //给钉钉回传消息
+                    $plainText = 'success';
+                    $encryptMsg = '';
+                    $dingTalkCryptor->EncryptMsg($plainText, $timestamp, $nonce, $encryptMsg);
+                    header( 'Content-Type:application/json');
+                    echo $encryptMsg;
+                    exit();
+                } else {
+                    //TODO 写json文件失败 写入日志
+                    
+                }
+            }
+        }
     }
 } else if($opt == 'dingtalk'){
     echo 2;
@@ -163,18 +227,19 @@ if($opt == 'listServer'){
 }
 
 
-function _registerDingtalkCallback($access_token = ''){
-    $registerCallbackUrl = 'https://oapi.dingtalk.com/call_back/register_call_back?access_token='.$access_token;
+function _registerDingtalkCallback($config){
+    $registerCallbackUrl = 'https://oapi.dingtalk.com/call_back/register_call_back?access_token='.$config['token'];      //TODO 这里使用https前端会报 HTTP错误 
     $postData = array(
         "call_back_tag"=>array("user_leave_org"),
-        "token"=>"123456",
-        "aes_key"=>"xxxxx",
+        "token"=>$config['register_token'],      
+        "aes_key"=>$config['register_aes_key'],   
         "url"=>"http://dingtalk.digitalevers.com/dingtalk.php?opt=callback"
     );
     $postJson = json_encode($postData);
-    //echo $postJson;
+//     echo $registerCallbackUrl;
+//     echo $postJson;
+//     exit;
     return requestPost($registerCallbackUrl, $postJson, array('Content-Type:application/json'));
-    //exit();
 }
 
 
@@ -203,7 +268,10 @@ function refreshToken($config){
             'token'=>$rs['access_token'],
             'timeout'=>time() + 7200,
             'appkey'=>$config['appkey'],
-            'appsecret'=>$config['appsecret']
+            'appsecret'=>$config['appsecret'],
+            'register_token'=>$config['register_token'],
+            'register_aes_key'=>$config['register_aes_key'],
+            'corpid'=>$config['corpid']
         );
         $CONF = "<?php
                 if(!defined('HUB')){
@@ -213,7 +281,10 @@ function refreshToken($config){
                     'token'=>'".$config['token']."',
                     'timeout'=>".$config['timeout'].",
                     'appkey'=>'".$config['appkey']."',
-                    'appsecret'=>'".$config['appsecret']."'
+                    'appsecret'=>'".$config['appsecret']."',
+                    'register_token'=>'".$config['register_token']."',
+                    'register_aes_key'=>'".$config['register_aes_key']."',
+                    'corpid'=>'".$config['corpid']."'
                 );";
         file_put_contents('../conf.php',$CONF);
     }
@@ -343,6 +414,7 @@ function requestPost($url = '', $data = array(), $header = array(), $timeout = 6
     if(function_exists('curl_init')){
         $ch = curl_init();
     }
+
     if($ch){
         //初始化curl
         curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
@@ -354,13 +426,14 @@ function requestPost($url = '', $data = array(), $header = array(), $timeout = 6
         } else {
             curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
         }
-        curl_setopt($ch, CURLOPT_PROXY, '121.89.174.1'); //代理服务器地址
-        curl_setopt($ch, CURLOPT_PROXYPORT,'8888'); 		//代理服务器端口
+        //curl_setopt($ch, CURLOPT_PROXY, '47.92.253.22');       //代理服务器地址
+        //curl_setopt($ch, CURLOPT_PROXYPORT,'8888'); 		//代理服务器端口
         //curl_setopt($ch, CURLOPT_SAFE_UPLOAD, false);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($ch, CURLOPT_POST, 1);				// post方式
         curl_setopt($ch, CURLOPT_POSTFIELDS, $data);	// post数据 php数组格式或字符串
         $content = curl_exec($ch);
+        
         if($content === false){
             if(curl_errno($ch) == CURLE_OPERATION_TIMEDOUT){
                 if($index < $count){

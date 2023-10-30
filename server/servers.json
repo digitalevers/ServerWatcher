@@ -1,1 +1,22 @@
-[{"ip":"xxxx","desc":"阿里云服务器","opt":"查看用户","pwd":"","type":1,"port":22},{"ip":"xxxx","desc":"","opt":"查看员工","pwd":"xx","type":"2","port":"29414","authUsers":[{"truename":"尼莫","username":"dd-26641111111"},{"truename":"尼莫","username":"dd-266419111"},{"truename":"华先生","username":"dd-010111"}]}]
+[
+	{
+		"ip": "39.98.73.255",
+		"desc": "后台服务器",
+		"opt": "查看用户",
+		"pwd": "QWERasdf!@#$",
+		"type": 1,
+		"port": 22,
+		"authUsers": [
+			{
+				"truename": "华定平",
+				"username": "dd-031539375821245415",
+				"userpwd": "dd-031539375821245415"
+			},
+			{
+				"truename": "华先生waldenpond",
+				"username": "dd-021461636022-11461947",
+				"userpwd": "dd-021461636022-11461947"
+			}
+		]
+	}
+]

@@ -51,8 +51,8 @@
 }
 
 .wrapper{
-  width: 100%;                      /** 指定宽度 否则在真机上只会默认显示屏幕30%左右的宽度 */
-  margin: 1rem 0.5rem 0.5rem 0.5rem;
+  /**width: 100%;**/                      /** 指定宽度 否则在真机上只会默认显示屏幕30%左右的宽度 */
+  padding: 0.5rem 0.5rem 0.5rem 0.5rem;
 }
 
 /** 表格样式 **/
@@ -175,6 +175,12 @@
 .form-row-content {
   flex: 1;
   font-size: 34rpx;
+  display: flex;
+  align-items: center;
+}
+
+.form-row-content .form-control{
+  width: 100%;
 }
 
 .form-line {
