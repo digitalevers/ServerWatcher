@@ -172,6 +172,7 @@ Page({
     let api = this.data.domain   //页面不销毁 则可以从data中取
     let postData = e.detail.value
     //校验表单
+    //sconsole.log(postData);
     let checkFormResult = this.checkForm(postData,1)
     //console.log(checkFormResult)
     if(checkFormResult['code'] != 200){
